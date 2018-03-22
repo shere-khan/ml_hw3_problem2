@@ -1,0 +1,8 @@
+*.swp
+yeast.data
+svm.py
+svmutil.py
+Makefile
+.idea
+__pycache__/
+README

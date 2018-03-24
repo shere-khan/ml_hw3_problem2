@@ -39,6 +39,13 @@ def normalize_np(data):
         val = 2 * ((d - minn) / range) - 1
         d = val
 
+def svm_classify(X, y, deg=1):
+    prob = svm_problem(X, y)
+    for i in range(deg):
+        param = svm_parameter("-t 1 -d {0}".format(i))
+        svm_train(prob, param)
+
+
 if __name__ == '__main__':
     X, y = getdata()
     stringcol = X[:, 0]
@@ -47,4 +54,5 @@ if __name__ == '__main__':
     for i in range(X.shape[1]):
         r = X[:, i]
         normalize_np(r)
-    print()
+
+    svm_classify(X, y)

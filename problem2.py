@@ -14,12 +14,14 @@ def getdata():
     with open(fn) as f:
         X = []
         y = []
+        x1 = []
         for line in f:
             d = line.split()
-            X.append(d[:-1])
-            y.append([-1])
+            x1.append(d.pop(0))
+            y.append(d.pop(-1))
+            X.append(list(map(float, d)))
 
-    return np.array(X), np.array(y)
+    return X, y
 
 def min_max_scaling(d):
     pass

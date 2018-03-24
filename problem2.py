@@ -48,11 +48,12 @@ def normalize_np(data):
     for d in np.nditer(data):
         d = min_max_scaling(d, minn, range)
 
-def svm_classify(X, y, deg=1):
-    prob = svm_problem(y, X)
+def svm_classify(deg=5):
+    y, x = svm_read_problem('formatted_data.txt')
+    prob = svm_problem(y, x)
     trains = []
-    for i in range(deg):
-        param = svm_parameter("-t 1 -d {0}".format(i))
+    for i in range(1, deg + 1):
+        param = svm_parameter("-t 1 -d {0} -v 10".format(i))
         m = svm_train(prob, param)
         trains.append(m)
 
@@ -71,18 +72,34 @@ def find_min_max(X):
 def set_to_dict(S):
     D = {}
     for i, s in enumerate(S):
-        D[s] = i
+        D[s] = i + 1
 
     return D
+
+def create_output(X, y):
+    with open("formatted_data.txt", "w") as f:
+        for x, lab in zip(X,y):
+            f.write("{0} ".format(lab))
+            for i, d in enumerate(x):
+                if d != 0.0 or d != 0:
+                    f.write("{0}:{1:.6f} ".format(i + 1, d))
+            f.write("\n")
+
+
 
 if __name__ == '__main__':
     (x1, X), y = getdata()
     mins, maxs = find_min_max(X)
     X = normalize(X, mins, maxs)
     D = set_to_dict(set(y))
-    y = list(map(lambda val: float(D[val]), y))
-    trains = svm_classify(X, y)
-    print()
+    y = list(map(lambda val: D[val], y))
+    create_output(X, y)
+    train = svm_classify()
+    print("results")
+    for t in train:
+        print(t)
+    # trains = svm_classify(X, y)
+    # print()
     # stringcol = X[:, 0]
     # X = np.delete(X, 0, 1)
     # X = X.astype(np.float)

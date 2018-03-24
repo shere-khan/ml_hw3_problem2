@@ -16,8 +16,8 @@ def getdata():
         y = []
         for line in f:
             d = line.split()
-            X = d[:-1]
-            y = d[-1]
+            X.append(d[:-1])
+            y.append([-1])
 
     return np.array(X), np.array(y)
 
@@ -32,9 +32,19 @@ def normalize(data):
             scaleddata.append(ds)
 
 def normalize_np(data):
-    for x in data.nditer(data.T):
-        print(x)
+    minn = data.min()
+    maxx = data.max()
+    range = maxx - minn
+    for d in np.nditer(data):
+        val = 2 * ((d - minn) / range) - 1
+        d = val
 
 if __name__ == '__main__':
     X, y = getdata()
-    normalize_np(X[:, 1:9])
+    stringcol = X[:, 0]
+    X = np.delete(X, 0, 1)
+    X = X.astype(np.float)
+    for i in range(X.shape[1]):
+        r = X[:, i]
+        normalize_np(r)
+    print()

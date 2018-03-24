@@ -49,10 +49,14 @@ def normalize_np(data):
         d = min_max_scaling(d, minn, range)
 
 def svm_classify(X, y, deg=1):
-    prob = svm_problem(X, y)
+    prob = svm_problem(y, X)
+    trains = []
     for i in range(deg):
         param = svm_parameter("-t 1 -d {0}".format(i))
-        svm_train(prob, param)
+        m = svm_train(prob, param)
+        trains.append(m)
+
+    return trains
 
 def find_min_max(X):
     mins = list(map(int, "0 0 0 0 0 0 0 0".split()))
@@ -64,12 +68,21 @@ def find_min_max(X):
 
     return mins, maxs
 
+def set_to_dict(S):
+    D = {}
+    for i, s in enumerate(S):
+        D[s] = i
+
+    return D
 
 if __name__ == '__main__':
     (x1, X), y = getdata()
     mins, maxs = find_min_max(X)
     X = normalize(X, mins, maxs)
-    print('dkfj')
+    D = set_to_dict(set(y))
+    y = list(map(lambda val: float(D[val]), y))
+    trains = svm_classify(X, y)
+    print()
     # stringcol = X[:, 0]
     # X = np.delete(X, 0, 1)
     # X = X.astype(np.float)

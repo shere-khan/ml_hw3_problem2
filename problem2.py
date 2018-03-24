@@ -1,5 +1,8 @@
 from svmutil import *
 import numpy as np
+import math as m
+from sklearn.svm import SVC
+from sklearn.model_selection import cross_val_score
 
 
 # y, x = [1,-1], [[1,0,1], [-1,0,-1]]
@@ -76,8 +79,8 @@ def set_to_dict(S):
 
     return D
 
-def create_output(X, y):
-    with open("formatted_data.txt", "w") as f:
+def create_output(X, y, fn):
+    with open(fn, "w") as f:
         for x, lab in zip(X,y):
             f.write("{0} ".format(lab))
             for i, d in enumerate(x):
@@ -89,15 +92,52 @@ def create_output(X, y):
 
 if __name__ == '__main__':
     (x1, X), y = getdata()
+    print()
     mins, maxs = find_min_max(X)
     X = normalize(X, mins, maxs)
     D = set_to_dict(set(y))
     y = list(map(lambda val: D[val], y))
-    create_output(X, y)
-    train = svm_classify()
-    print("results")
-    for t in train:
-        print(t)
+
+    p = 0.8
+    sx = m.ceil(len(X) * p)
+    sy = m.ceil(len(y) * p)
+
+    trainX = X[:sx]
+    trainy = y[:sy]
+
+    testX = X[sx:]
+    testy = y[sy:]
+
+    bestc = 0
+    bestd = 0
+    bests = 0
+    for d in range(1, 5):
+        # print("d: ", d)
+        for c in range(1, 33):
+            # print("c: ", c)
+            clf = SVC(C=c, kernel='poly', degree=d)
+            clf.fit(np.array(trainX), np.array(trainy))
+            # S = clf.score(np.array(testX), np.array(testy), cv=10)
+            S = cross_val_score(clf, np.array(testX), np.array(testy), cv=10)
+            for s in S:
+                if s > bests:
+                    bests = s
+                    bestc = c
+                    bestd = d
+                # print(s)
+            print()
+            print()
+
+    print("best C: ", bestc)
+    print("best d: ", bestd)
+
+    # create_output(trainX, trainy, "training.txt")
+    # create_output(testX, testy, "test.txt")
+
+    # train = svm_classify()
+    # print("results")
+    # for t in train:
+    #     print(t)
     # trains = svm_classify(X, y)
     # print()
     # stringcol = X[:, 0]

@@ -119,11 +119,14 @@ if __name__ == '__main__':
             clf.fit(np.array(trainX), np.array(trainy))
             # S = clf.score(np.array(testX), np.array(testy), cv=10)
             S = cross_val_score(clf, np.array(testX), np.array(testy), cv=10)
-            for s in S:
-                if s > bests:
-                    bests = s
-                    bestc = c
-                    bestd = d
+            if S.mean() > bests:
+                bests = S.mean()
+                bestc = c
+            # for s in S:
+            #     if s > bests:
+                    # bests = s
+                    # bestc = c
+                    # bestd = d
                 # print(s)
             print()
             print()

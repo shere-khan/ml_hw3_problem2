@@ -120,37 +120,47 @@ def split_data(data):
 
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
-    accuracies = {}
-    for d in range(1, 5):
-        for i in range(k):
-            c = 1
-            print("c: {0} d: {1}".format(c, d))
-            r = random.randint(0, len(chunks) - 1)
+    tot_accs = {}
+    for d in range(1, 3):
+        c_accs = {}
+        for c in range(1, 4):
+            accuracies = []
+            for i in range(k):
+                print("c: {0} d: {1}".format(c, d))
+                r = random.randint(0, len(chunks) - 1)
 
-            # Get training data
-            trainchunks = [x for i, x in enumerate(chunks) if i != 3]
-            training_data = chunks_to_train(trainchunks)
-            trainy, trainx = split_data(training_data)
+                # Get training data
+                trainchunks = [x for i, x in enumerate(chunks) if i != 3]
+                training_data = chunks_to_train(trainchunks)
+                trainy, trainx = split_data(training_data)
 
-            m = svm_train(trainy, trainx, "-c {0} -g 1 -t 2 -d {1}".format(c, d))
-            # m = toPyModel(m)
-            # m.get_SV()
+                m = svm_train(trainy, trainx, "-c {0} -g 1 -t 2 -d {1}".format(c, d))
+                # m = toPyModel(m)
+                # m.get_SV()
 
-            # Get test data
-            chunk = chunks[r]
-            testy, testx = split_data(chunk)
+                # Get test data
+                chunk = chunks[r]
+                testy, testx = split_data(chunk)
 
-            # Predict and get accuracy
-            svm_predict(testy, testx, m)
-            predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
-            accuracy, mse, scc = evaluations(testy, predict_y)
-            if d not in accuracies:
-                accuracies[d] = []
-            else:
-                accuracies[d].append(accuracy)
-            print()
+                # Predict and get accuracy
+                svm_predict(testy, testx, m)
+                predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+                accuracy, mse, scc = evaluations(testy, predict_y)
+                accuracies.append(accuracy)
+                print()
 
-    return accuracies
+            # Get avg accuracy for current value of C and add to dict
+            sum = 0
+            for v in accuracies:
+                sum += v
+            mean = sum / len(accuracies)
+
+            # Add mean to C acc dict
+            c_accs[c] = mean
+
+        tot_accs[d] = c_accs
+
+    return tot_accs
 
 def print_means(accs):
     means = []
@@ -160,6 +170,13 @@ def print_means(accs):
             sum += v
         mean = sum / len(vals)
         print("d: {0} mean: {1}".format(key, mean))
+
+def print_accs(accs):
+    for d, val1 in accs.items():
+        print("d: {0}".format(d), end=" ")
+        for c, val2 in val1.items():
+            print("c: {0} mean: {1}".format(c, val2), end=" ")
+        print()
 
 if __name__ == '__main__':
     # Read data
@@ -197,4 +214,5 @@ if __name__ == '__main__':
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
     accs = cross_val_svm(X, y, 10)
-    print_means(accs)
+    print_accs(accs)
+    # print_means(accs)

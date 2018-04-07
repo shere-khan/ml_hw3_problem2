@@ -6,3 +6,9 @@ Makefile
 .idea
 __pycache__/
 README
+script.py
+svm.py
+svmutil.py
+Makefile
+grid_mod.py
+*.swp

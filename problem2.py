@@ -1,16 +1,12 @@
 from svmutil import *
 import numpy as np
+import random
 import math as m
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
-
-# y, x = [1,-1], [[1,0,1], [-1,0,-1]]
-# Sparse data
-# y, x = [1,-1], [{1:1, 3:1}, {1:-1,3:-1}]
-# prob  = svm_problem(y, x)
-# param = svm_parameter('-t 0 -c 4 -b 1')
-# m = svm_train(prob, param)
 
 def getdata():
     fn = 'yeast.data'
@@ -21,11 +17,10 @@ def getdata():
         for line in f:
             d = line.split()
             x1.append(d.pop(0))
-            y.append(d.pop(-1))
+            l = d.pop(-1)
+            label = 1 if l == "CYT" else 0
+            y.append(label)
             x = list(map(float, d))
-            for d in x:
-                if d < 0:
-                    print('test1')
             X.append(x)
 
     return (x1, X), y
@@ -81,73 +76,83 @@ def set_to_dict(S):
 
 def create_output(X, y, fn):
     with open(fn, "w") as f:
-        for x, lab in zip(X,y):
+        for x, lab in zip(X, y):
             f.write("{0} ".format(lab))
             for i, d in enumerate(x):
                 if d != 0.0 or d != 0:
                     f.write("{0}:{1:.6f} ".format(i + 1, d))
             f.write("\n")
 
+def sklprintvals(X, y):
+    with open("sklearn_svc_results_k5_nosplit.txt", "w") as f:
+        for d in range(1, 5):
+            for c in range(1, 60):
+                clf = SVC(C=c, kernel='poly', degree=d)
+                S = cross_val_score(clf, np.array(X), np.array(y), cv=10)
+                f.write("d: {0}  c: {1:>2}  error: {2:.4f}\n".format(d, c, 1 - S.mean()))
+                print("d: {0}  c: {1:>2}  error: {2:.4f}".format(d, c, 1 - S.mean()))
+            f.write("\n")
+            print()
 
+def chunkIt(seq, num):
+    avg = len(seq) / float(num)
+    out = []
+    last = 0.0
+
+    while last < len(seq):
+        out.append(seq[int(last):int(last + avg)])
+        last += avg
+
+    return out
+
+def cross_val_svm(X, y, k):
+    chunks = chunkIt(list(zip(X, y)), k)
+    for i in range(k):
+        r = random.randint(len(chunks))
+        chunk = chunks[r]
+        trainy = [c[0] for c in chunk]
+        trainx = [c[1] for c in chunk]
+
+        m = svm_train(trainy, trainx, "-s 0 -t 1 -d 1")
+        m = toPyModel(m)
+        m.get_SV()
+        # predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+        # accuracy, mse, scc = evaluations(testy, predict_y)
+        # print("accuracy: {0}\nmean square error: {1}\nscc: {2}".format(accuracy, mse, scc))
 
 if __name__ == '__main__':
-    (x1, X), y = getdata()
-    print()
-    mins, maxs = find_min_max(X)
-    X = normalize(X, mins, maxs)
-    D = set_to_dict(set(y))
-    y = list(map(lambda val: D[val], y))
+    # Read data
+    # (x1, X), y = getdata()
 
+    # Create unscaled output file for grid.py
+    # create_output(X, y, "training_and_test_binary.txt")
+
+    # Normalize and create formatted output for libsvm python code
+    # mins, maxs = find_min_max(X)
+    # X = normalize(X, mins, maxs)
+    # D = set_to_dict(set(y))
+    # create_output(X, y, "training_and_test_binary.txt")
+
+    # Scikit-learn cross validation attempt
+    # sklprintvals(np.array(X), np.array(y))
+
+    # Run libsvm
+    y, X = svm_read_problem("training_and_test_binary.txt")
+    # res = list(zip(y, X))
+    # random.shuffle(res)
+    # y = [d[0] for d in res]
+    # X = [d[1] for d in res]
+    # cross_val_svm(X, y, 10)
     p = 0.8
-    sx = m.ceil(len(X) * p)
-    sy = m.ceil(len(y) * p)
+    capx = m.ceil(len(X) * p)
+    trainx = X[:capx]
+    testx = X[capx:]
 
-    trainX = X[:sx]
-    trainy = y[:sy]
+    capy = m.ceil(len(y) * p)
+    trainy = y[:capy]
+    testy = y[capy:]
 
-    testX = X[sx:]
-    testy = y[sy:]
-
-    bestc = 0
-    bestd = 0
-    bests = 0
-    for d in range(1, 5):
-        # print("d: ", d)
-        for c in range(1, 33):
-            # print("c: ", c)
-            clf = SVC(C=c, kernel='poly', degree=d)
-            clf.fit(np.array(trainX), np.array(trainy))
-            # S = clf.score(np.array(testX), np.array(testy), cv=10)
-            S = cross_val_score(clf, np.array(testX), np.array(testy), cv=10)
-            if S.mean() > bests:
-                bests = S.mean()
-                bestc = c
-            # for s in S:
-            #     if s > bests:
-                    # bests = s
-                    # bestc = c
-                    # bestd = d
-                # print(s)
-            print()
-            print()
-
-    print("best C: ", bestc)
-    print("best d: ", bestd)
-
-    # create_output(trainX, trainy, "training.txt")
-    # create_output(testX, testy, "test.txt")
-
-    # train = svm_classify()
-    # print("results")
-    # for t in train:
-    #     print(t)
-    # trains = svm_classify(X, y)
-    # print()
-    # stringcol = X[:, 0]
-    # X = np.delete(X, 0, 1)
-    # X = X.astype(np.float)
-    # for i in range(X.shape[1]):
-    #     r = X[:, i]
-    #     normalize_np(r)
-
-    # svm_classify(X, y)
+    m = svm_train(trainy, trainx, "-s 0 -t 1 -d 3")
+    predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+    accuracy, mse, scc = evaluations(testy, predict_y)
+    print("accuracy: {0}\nmean square error: {1}\nscc: {2}".format(accuracy, mse, scc))

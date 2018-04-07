@@ -121,9 +121,9 @@ def split_data(data):
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
     tot_accs = {}
-    for d in range(1, 3):
+    for d in range(1, 10):
         c_accs = {}
-        for c in range(1, 4):
+        for c in range(1, 20):
             accuracies = []
             for i in range(k):
                 print("c: {0} d: {1}".format(c, d))
@@ -172,11 +172,22 @@ def print_means(accs):
         print("d: {0} mean: {1}".format(key, mean))
 
 def print_accs(accs):
+    max_d = 0
+    max_c = 0
+    max_mean = 0
     for d, val1 in accs.items():
         print("d: {0}".format(d), end=" ")
         for c, val2 in val1.items():
+            if val2 > max_mean:
+                max_mean = val2
+                max_d = d
+                max_c = c
             print("c: {0} mean: {1}".format(c, val2), end=" ")
         print()
+
+    print()
+    print("Max values")
+    print("d: {0} c: {1} mean: {2}".format(max_d, max_c, max_mean))
 
 if __name__ == '__main__':
     # Read data

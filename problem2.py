@@ -125,7 +125,19 @@ if __name__ == '__main__':
     # (x1, X), y = getdata()
 
     # Create unscaled output file for grid.py
-    # create_output(X, y, "training_and_test_binary.txt")
+    # p = 0.9
+    # capx = m.ceil(len(X) * p)
+    # trainx = X[:capx]
+    # testx = X[capx:]
+
+    # capy = m.ceil(len(y) * p)
+    # trainy = y[:capy]
+    # testy = y[capy:]
+
+    # Create unscaled training and test output file for easy.py
+    # create_output(trainx, trainy, "training_unscaled.txt")
+    # create_output(testx, testy, "test_unscaled.txt")
+
 
     # Normalize and create formatted output for libsvm python code
     # mins, maxs = find_min_max(X)
@@ -138,12 +150,15 @@ if __name__ == '__main__':
 
     # Run libsvm
     y, X = svm_read_problem("training_and_test_binary.txt")
+
     # res = list(zip(y, X))
     # random.shuffle(res)
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
     # cross_val_svm(X, y, 10)
-    p = 0.8
+
+    # Create training and testing data
+    p = 0.9
     capx = m.ceil(len(X) * p)
     trainx = X[:capx]
     testx = X[capx:]
@@ -152,7 +167,7 @@ if __name__ == '__main__':
     trainy = y[:capy]
     testy = y[capy:]
 
-    m = svm_train(trainy, trainx, "-s 0 -t 1 -d 3")
+    m = svm_train(trainy, trainx, "-c 1 -g 1 -t 2 -d 3")
     predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
     accuracy, mse, scc = evaluations(testy, predict_y)
     print("accuracy: {0}\nmean square error: {1}\nscc: {2}".format(accuracy, mse, scc))

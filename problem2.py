@@ -105,20 +105,61 @@ def chunkIt(seq, num):
 
     return out
 
-def cross_val_svm(X, y, k):
-    chunks = chunkIt(list(zip(X, y)), k)
-    for i in range(k):
-        r = random.randint(len(chunks))
-        chunk = chunks[r]
-        trainy = [c[0] for c in chunk]
-        trainx = [c[1] for c in chunk]
+def chunks_to_train(chunks):
+    flat = []
+    for chunk in chunks:
+        flat += chunk
 
-        m = svm_train(trainy, trainx, "-s 0 -t 1 -d 1")
-        m = toPyModel(m)
-        m.get_SV()
-        # predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
-        # accuracy, mse, scc = evaluations(testy, predict_y)
-        # print("accuracy: {0}\nmean square error: {1}\nscc: {2}".format(accuracy, mse, scc))
+    return flat
+
+def split_data(data):
+    y = [c[0] for c in data]
+    x = [c[1] for c in data]
+
+    return y, x
+
+def cross_val_svm(X, y, k):
+    chunks = chunkIt(list(zip(y, X)), k)
+    accuracies = {}
+    for d in range(1, 5):
+        for i in range(k):
+            c = 1
+            print("c: {0} d: {1}".format(c, d))
+            r = random.randint(0, len(chunks) - 1)
+
+            # Get training data
+            trainchunks = [x for i, x in enumerate(chunks) if i != 3]
+            training_data = chunks_to_train(trainchunks)
+            trainy, trainx = split_data(training_data)
+
+            m = svm_train(trainy, trainx, "-c {0} -g 1 -t 2 -d {1}".format(c, d))
+            # m = toPyModel(m)
+            # m.get_SV()
+
+            # Get test data
+            chunk = chunks[r]
+            testy, testx = split_data(chunk)
+
+            # Predict and get accuracy
+            svm_predict(testy, testx, m)
+            predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+            accuracy, mse, scc = evaluations(testy, predict_y)
+            if d not in accuracies:
+                accuracies[d] = []
+            else:
+                accuracies[d].append(accuracy)
+            print()
+
+    return accuracies
+
+def print_means(accs):
+    means = []
+    for key, vals in accs.items():
+        sum = 0
+        for v in vals:
+            sum += v
+        mean = sum / len(vals)
+        print("d: {0} mean: {1}".format(key, mean))
 
 if __name__ == '__main__':
     # Read data
@@ -155,19 +196,5 @@ if __name__ == '__main__':
     # random.shuffle(res)
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
-    # cross_val_svm(X, y, 10)
-
-    # Create training and testing data
-    p = 0.9
-    capx = m.ceil(len(X) * p)
-    trainx = X[:capx]
-    testx = X[capx:]
-
-    capy = m.ceil(len(y) * p)
-    trainy = y[:capy]
-    testy = y[capy:]
-
-    m = svm_train(trainy, trainx, "-c 1 -g 1 -t 2 -d 3")
-    predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
-    accuracy, mse, scc = evaluations(testy, predict_y)
-    print("accuracy: {0}\nmean square error: {1}\nscc: {2}".format(accuracy, mse, scc))
+    accs = cross_val_svm(X, y, 10)
+    print_means(accs)

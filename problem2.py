@@ -118,21 +118,21 @@ def split_data(data):
 
     return y, x
 
-def question2b(X, y, k):
-    tot_accs = {}
-    for d in range(1, 5):
-        c_accs = {}
-        for c in range(2, 3):
-            print("c: {0} d: {1}".format(c, d))
-            t_acc = svm_train(y, X, "-c {0} -v 10 -g 1 -t 1 -d {1}".format(c, d))
-            c_accs[c] = t_acc
-            # Predict and get accuracy
-            svm_predict(y, X, m)
-            predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
-
-            # Test Error
-            accuracy, mse, scc = evaluations(testy, predict_y)
-            c_accs[c].append(accuracy)
+# def question2b(X, y, k):
+#     tot_accs = {}
+#     for d in range(1, 5):
+#         c_accs = {}
+#         for c in range(2, 3):
+#             print("c: {0} d: {1}".format(c, d))
+#             t_acc = svm_train(y, X, "-c {0} -v 10 -g 1 -t 1 -d {1}".format(c, d))
+#             c_accs[c] = t_acc
+#             # Predict and get accuracy
+#             svm_predict(y, X, m)
+#             predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+#
+#             # Test Error
+#             accuracy, mse, scc = evaluations(testy, predict_y)
+#             c_accs[c].append(accuracy)
 
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
@@ -159,12 +159,14 @@ def cross_val_svm(X, y, k):
                 testy, testx = split_data(chunk)
 
                 # Predict and get accuracy
-                svm_predict(testy, testx, m)
                 predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+
+                # Training error
+                p_train_y, p_train_acc, p_train_val = svm_predict(trainy, trainx, m)
 
                 # Test Error
                 accuracy, mse, scc = evaluations(testy, predict_y)
-                accuracies.append(accuracy)
+                accuracies.append((accuracy, p_train_acc))
                 print()
 
             # Add mean to C acc dict
@@ -241,7 +243,7 @@ if __name__ == '__main__':
     # random.shuffle(res)
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
-    # accs = cross_val_svm(X, y, 10)
-    question2b(X, y, 10)
+    accs = cross_val_svm(X, y, 10)
+    # question2b(X, y, 10)
     print_accs()
     # pass

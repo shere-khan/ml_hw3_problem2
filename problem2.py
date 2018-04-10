@@ -118,10 +118,26 @@ def split_data(data):
 
     return y, x
 
+def question2b(X, y, k):
+    tot_accs = {}
+    for d in range(1, 5):
+        c_accs = {}
+        for c in range(2, 3):
+            print("c: {0} d: {1}".format(c, d))
+            t_acc = svm_train(y, X, "-c {0} -v 10 -g 1 -t 1 -d {1}".format(c, d))
+            c_accs[c] = t_acc
+            # Predict and get accuracy
+            svm_predict(y, X, m)
+            predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+
+            # Test Error
+            accuracy, mse, scc = evaluations(testy, predict_y)
+            c_accs[c].append(accuracy)
+
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
     tot_accs = {}
-    for d in range(1, 7):
+    for d in range(1, 5):
         c_accs = {}
         for c in range(2, 3):
             accuracies = []
@@ -145,6 +161,8 @@ def cross_val_svm(X, y, k):
                 # Predict and get accuracy
                 svm_predict(testy, testx, m)
                 predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+
+                # Test Error
                 accuracy, mse, scc = evaluations(testy, predict_y)
                 accuracies.append(accuracy)
                 print()
@@ -155,12 +173,12 @@ def cross_val_svm(X, y, k):
         tot_accs[d] = c_accs
 
 
-    pickle.dump(tot_accs, open("tot_accs2.p", "wb"))
+    pickle.dump(tot_accs, open("tot_accs_2b.p", "wb"))
 
     return tot_accs
 
 def print_accs():
-    accs = pickle.load(open("tot_accs2.p", "rb"))
+    accs = pickle.load(open("tot_accs_2b.p", "rb"))
     max_d = 0
     max_c = 0
     max_mean = 0
@@ -168,16 +186,20 @@ def print_accs():
         print("d: {0}".format(d), end="\n")
         for c, val2 in val1.items():
             # Get avg accuracy for current value of C and add to dict
-            sum = 0
+            train_sum = 0
+            test_sum = 0
             for v in val2:
-                sum += v
-            mean = sum / len(val2)
+                train_sum += v[0]
+                test_sum += v[1]
+            trainmean = train_sum / len(val2)
+            testmean = test_sum / len(val2)
 
-            if mean > max_mean:
-                max_mean = mean
+            if trainmean > max_mean:
+                max_mean = trainmean
                 max_d = d
                 max_c = c
-            print("c: {0} mean: {1:.3f}".format(c, mean), end="\n")
+            print("c: {0}\n\ttrain mean: {1:.3f}\n\ttest mean: {2:.3f}"
+                  .format(c, trainmean, testmean), end="\n")
         print("\n")
 
     print()
@@ -219,6 +241,7 @@ if __name__ == '__main__':
     # random.shuffle(res)
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
-    accs = cross_val_svm(X, y, 10)
-    # print_accs()
+    # accs = cross_val_svm(X, y, 10)
+    question2b(X, y, 10)
+    print_accs()
     # pass

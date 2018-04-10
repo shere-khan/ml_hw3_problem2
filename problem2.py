@@ -1,6 +1,6 @@
 from svmutil import *
 import numpy as np
-import random
+import random, pickle
 import math as m
 from sklearn.svm import SVC
 from sklearn.model_selection import cross_val_score
@@ -121,22 +121,22 @@ def split_data(data):
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
     tot_accs = {}
-    for d in range(1, 10):
+    for d in range(1, 7):
         c_accs = {}
-        for c in range(1, 20):
+        for c in range(2, 3):
             accuracies = []
+            chunk_ints = list(range(len(chunks)))
+            random.shuffle(chunk_ints)
             for i in range(k):
                 print("c: {0} d: {1}".format(c, d))
-                r = random.randint(0, len(chunks) - 1)
+                r = chunk_ints.pop()
 
                 # Get training data
-                trainchunks = [x for i, x in enumerate(chunks) if i != 3]
+                trainchunks = [x for i, x in enumerate(chunks) if i != r]
                 training_data = chunks_to_train(trainchunks)
                 trainy, trainx = split_data(training_data)
 
-                m = svm_train(trainy, trainx, "-c {0} -g 1 -t 2 -d {1}".format(c, d))
-                # m = toPyModel(m)
-                # m.get_SV()
+                m = svm_train(trainy, trainx, "-c {0} -g 1 -t 1 -d {1}".format(c, d))
 
                 # Get test data
                 chunk = chunks[r]
@@ -149,41 +149,36 @@ def cross_val_svm(X, y, k):
                 accuracies.append(accuracy)
                 print()
 
-            # Get avg accuracy for current value of C and add to dict
-            sum = 0
-            for v in accuracies:
-                sum += v
-            mean = sum / len(accuracies)
-
             # Add mean to C acc dict
-            c_accs[c] = mean
+            c_accs[c] = accuracies
 
         tot_accs[d] = c_accs
 
+
+    pickle.dump(tot_accs, open("tot_accs2.p", "wb"))
+
     return tot_accs
 
-def print_means(accs):
-    means = []
-    for key, vals in accs.items():
-        sum = 0
-        for v in vals:
-            sum += v
-        mean = sum / len(vals)
-        print("d: {0} mean: {1}".format(key, mean))
-
-def print_accs(accs):
+def print_accs():
+    accs = pickle.load(open("tot_accs2.p", "rb"))
     max_d = 0
     max_c = 0
     max_mean = 0
     for d, val1 in accs.items():
-        print("d: {0}".format(d), end=" ")
+        print("d: {0}".format(d), end="\n")
         for c, val2 in val1.items():
-            if val2 > max_mean:
-                max_mean = val2
+            # Get avg accuracy for current value of C and add to dict
+            sum = 0
+            for v in val2:
+                sum += v
+            mean = sum / len(val2)
+
+            if mean > max_mean:
+                max_mean = mean
                 max_d = d
                 max_c = c
-            print("c: {0} mean: {1}".format(c, val2), end=" ")
-        print()
+            print("c: {0} mean: {1:.3f}".format(c, mean), end="\n")
+        print("\n")
 
     print()
     print("Max values")
@@ -225,5 +220,5 @@ if __name__ == '__main__':
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
     accs = cross_val_svm(X, y, 10)
-    print_accs(accs)
-    # print_means(accs)
+    # print_accs()
+    # pass

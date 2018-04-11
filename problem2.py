@@ -139,7 +139,7 @@ def cross_val_svm(X, y, k):
     tot_accs = {}
     for d in range(1, 5):
         c_accs = {}
-        for c in range(2, 3):
+        for c in [1, 10, 100, 1000, 10000]:
             accuracies = []
             chunk_ints = list(range(len(chunks)))
             random.shuffle(chunk_ints)
@@ -166,7 +166,9 @@ def cross_val_svm(X, y, k):
 
                 # Test Error
                 accuracy, mse, scc = evaluations(testy, predict_y)
-                accuracies.append((accuracy, p_train_acc))
+                err = 100 - accuracy
+                train_err = 100 - p_train_acc[0]
+                accuracies.append((err, train_err))
                 print()
 
             # Add mean to C acc dict
@@ -175,38 +177,38 @@ def cross_val_svm(X, y, k):
         tot_accs[d] = c_accs
 
 
-    pickle.dump(tot_accs, open("tot_accs_2b.p", "wb"))
+    pickle.dump(tot_accs, open("d_vs_nSV.p", "wb"))
 
     return tot_accs
 
-def print_accs():
-    accs = pickle.load(open("tot_accs_2b.p", "rb"))
-    max_d = 0
-    max_c = 0
-    max_mean = 0
+def find_min_error():
+    accs = pickle.load(open("tot_accs_4.p", "rb"))
+    min_d = 0
+    min_c = 0
+    min_err = 100
     for d, val1 in accs.items():
         print("d: {0}".format(d), end="\n")
         for c, val2 in val1.items():
             # Get avg accuracy for current value of C and add to dict
-            train_sum = 0
             test_sum = 0
+            train_sum = 0
             for v in val2:
-                train_sum += v[0]
-                test_sum += v[1]
-            trainmean = train_sum / len(val2)
+                test_sum += v[0]
+                train_sum += v[1]
             testmean = test_sum / len(val2)
+            trainmean = train_sum / len(val2)
 
-            if trainmean > max_mean:
-                max_mean = trainmean
-                max_d = d
-                max_c = c
+            if testmean < min_err:
+                min_err = testmean
+                min_d = d
+                min_c = c
             print("c: {0}\n\ttrain mean: {1:.3f}\n\ttest mean: {2:.3f}"
                   .format(c, trainmean, testmean), end="\n")
         print("\n")
 
     print()
-    print("Max values")
-    print("d: {0} c: {1} mean: {2}".format(max_d, max_c, max_mean))
+    print("Min values")
+    print("d: {0} c: {1} mean: {2}".format(min_d, min_c, min_err))
 
 if __name__ == '__main__':
     # Read data
@@ -236,6 +238,10 @@ if __name__ == '__main__':
     # Scikit-learn cross validation attempt
     # sklprintvals(np.array(X), np.array(y))
 
+
+
+
+
     # Run libsvm
     y, X = svm_read_problem("training_and_test_binary.txt")
 
@@ -243,7 +249,15 @@ if __name__ == '__main__':
     # random.shuffle(res)
     # y = [d[0] for d in res]
     # X = [d[1] for d in res]
+
+
     accs = cross_val_svm(X, y, 10)
+
+
     # question2b(X, y, 10)
-    print_accs()
+
+
+    # find_min_error()
+
+
     # pass

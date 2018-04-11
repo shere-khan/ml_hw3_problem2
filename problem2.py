@@ -137,9 +137,9 @@ def split_data(data):
 def cross_val_svm(X, y, k):
     chunks = chunkIt(list(zip(y, X)), k)
     tot_accs = {}
-    for d in range(1, 5):
+    for d in range(1, 9):
         c_accs = {}
-        for c in [1, 10, 100, 1000, 10000]:
+        for c in range(76, 77):
             accuracies = []
             chunk_ints = list(range(len(chunks)))
             random.shuffle(chunk_ints)
@@ -155,21 +155,27 @@ def cross_val_svm(X, y, k):
                 m = svm_train(trainy, trainx, "-c {0} -g 1 -t 1 -d {1}".format(c, d))
 
                 # Get test data
-                chunk = chunks[r]
-                testy, testx = split_data(chunk)
+                # chunk = chunks[r]
+                # testy, testx = split_data(chunk)
 
                 # Predict and get accuracy
-                predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
+                # predict_y, predict_acc, predict_val = svm_predict(testy, testx, m)
 
                 # Training error
-                p_train_y, p_train_acc, p_train_val = svm_predict(trainy, trainx, m)
+                # p_train_y, p_train_acc, p_train_val = svm_predict(trainy, trainx, m)
 
                 # Test Error
-                accuracy, mse, scc = evaluations(testy, predict_y)
-                err = 100 - accuracy
-                train_err = 100 - p_train_acc[0]
-                accuracies.append((err, train_err))
-                print()
+                # accuracy, mse, scc = evaluations(testy, predict_y)
+                # err = 100 - accuracy
+                # train_err = 100 - p_train_acc[0]
+                # accuracies.append((err, train_err))
+                r = m.get_sv_coef()
+                q = np.array(r)
+                o = np.where(np.absolute(q) < 76)
+                l = len(m.get_SV())
+                p = len(o[0])
+                nBSV = l - p
+                accuracies.append((nBSV, None))
 
             # Add mean to C acc dict
             c_accs[c] = accuracies
@@ -177,7 +183,7 @@ def cross_val_svm(X, y, k):
         tot_accs[d] = c_accs
 
 
-    pickle.dump(tot_accs, open("d_vs_nSV.p", "wb"))
+    pickle.dump(tot_accs, open("d_vs_nBSV.p", "wb"))
 
     return tot_accs
 
